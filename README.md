@@ -5,10 +5,21 @@ ticker. The default is QQQ.
 
 ## Run
 
+Market data comes from [Tiingo](https://www.tiingo.com), so you need an API key. Set it in the environment or in
+`.streamlit/secrets.toml` (already git-ignored):
+
+```bash
+export TIINGO_API_KEY=your_key_here
+# or in .streamlit/secrets.toml:  TIINGO_API_KEY = "your_key_here"
+```
+
 ```bash
 uv sync
 uv run streamlit run app.py
 ```
+
+Downloaded prices are cached on disk (default `~/.cache/opeval/tiingo`, override with `OPEVAL_CACHE_DIR`). Each
+ticker is fetched from Tiingo at most once per calendar day; later runs that day read the cache.
 
 If you're behind a corporate TLS proxy (Zscaler, for example), add `--native-tls` to the `uv` commands, or set
 `UV_NATIVE_TLS=1`. Then run the tests:
@@ -58,7 +69,9 @@ exit also pauses new entries.
 
 Free historical option chains don't exist, so this is a **model-based** backtest:
 
-- Underlying, VIX, VXN and the 13-week T-bill come from Yahoo Finance as daily closes.
+- The underlying comes from Tiingo as daily closes. Tiingo's free daily endpoint does not carry the VIX, VXN or
+  13-week T-bill index series, so those are normally unavailable. The model then falls back to a constant IV
+  (default 20%) and a constant rate (default 4%), and the app shows a note saying so.
 - Options are priced with Black-Scholes. The volatility input is an IV proxy: VXN (the default for QQQ), VIX,
   realized volatility or a constant. You can scale it with a multiplier and add an optional linear put skew.
 - Trades open and close at the daily close. Stops and targets are checked once a day.
@@ -71,7 +84,7 @@ Free historical option chains don't exist, so this is a **model-based** backtest
 
 ```
 app.py              Streamlit UI
-opeval/data.py      Yahoo Finance download and IV/rate inputs
+opeval/data.py      Tiingo download (daily disk cache) and IV/rate inputs
 opeval/pricing.py   Black-Scholes, skew, strike selection
 opeval/engine.py    Daily backtest loop, expirations, buying power, payoff
 opeval/fees.py      IBKR commission models

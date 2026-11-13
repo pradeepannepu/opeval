@@ -10,7 +10,6 @@ dependencies = [
     "plotly>=5.24",
     "scipy>=1.13",
     "streamlit>=1.50",
-    "yfinance>=0.2.60",
 ]
 
 [dependency-groups]

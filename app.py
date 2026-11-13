@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import datetime as dt
 import math
+import os
 import uuid
 from dataclasses import asdict, fields
 
@@ -34,8 +35,23 @@ st.set_page_config(page_title="Options Backtester", page_icon="📈", layout="wi
 LEG_FIELDS = [f.name for f in fields(Leg)]
 
 
+def _tiingo_key_from_secrets() -> None:
+    """Let .streamlit/secrets.toml supply TIINGO_API_KEY when the environment does not."""
+    if os.environ.get("TIINGO_API_KEY"):
+        return
+    try:
+        key = st.secrets.get("TIINGO_API_KEY")
+    except Exception:  # no secrets file configured
+        key = None
+    if key:
+        os.environ["TIINGO_API_KEY"] = str(key)
+
+
+_tiingo_key_from_secrets()
+
+
 # --------------------------------------------------------------------------- helpers
-@st.cache_data(ttl=6 * 3600, show_spinner="Downloading market data from Yahoo Finance…")
+@st.cache_data(ttl=6 * 3600, show_spinner="Downloading market data from Tiingo…")
 def load_raw(ticker: str, start: dt.date, end: dt.date) -> pd.DataFrame:
     return fetch_market_data(ticker, start, end)
 
